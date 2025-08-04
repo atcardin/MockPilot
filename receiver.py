@@ -4,12 +4,21 @@ from pydantic import BaseModel, Field, create_model
 from typing import Any, Dict, List, Optional, Type, Annotated
 import uvicorn
 import logging
+import json
 
 class Receiver:
-    def __init__(self, config, logger=None):
-        self.config = config
+    def __init__(self, config_path, logger=None):
+        self.config_path = config_path
+        self.config = self.load_config()
         self.app = None
         self.logger = logger or logging.getLogger("APIReceiver")
+
+    def load_config(self):
+        try:
+            with open(self.config_path, 'r') as f:
+                return json.load(f).get("receiverConfig", {})
+        except FileNotFoundError:
+            raise Exception(f"Config file not found at {self.config_path}!")
     
     @asynccontextmanager
     async def _lifespan(self, app: FastAPI):
@@ -86,6 +95,14 @@ class Receiver:
                 }
         return _handler
 
+    def _make_handler_without_body(self):
+        """Create a handler function for the model specified"""
+        async def _handler():
+            return {
+                "message": "Valid"
+                }
+        return _handler
+
     def _initialize_endpoint(self, endpoint_config) -> None:
         """Initializes a single endpoint"""
         path = endpoint_config.get("url",None)
@@ -93,10 +110,17 @@ class Receiver:
         body = endpoint_config.get("bodyFields",[])
         if path is None or method is None:
             return
-        # Create the model
-        model = self._build_nested_model("RequestModel", endpoint_config["bodyFields"])
-        # Create the handler function
-        handler = self._make_handler(model)
+        
+        if method == "GET":
+            # No model needed
+            model = None
+            # Dummy handler
+            handler = self._make_handler_without_body()
+        else:
+            # Create the model
+            model = self._build_nested_model("RequestModel", endpoint_config["bodyFields"])
+            # Create the handler function
+            handler = self._make_handler(model)
         # Add the endpoint the API
         self.app.add_api_route(path, handler, methods=[method])
         self.logger.info(f"API route added: {method} {path}")
@@ -109,7 +133,7 @@ class Receiver:
         for endpoint_config in endpoints:
             self._initialize_endpoint(endpoint_config)
 
-    def _initilize_receiver(self) -> FastAPI:
+    def initilize_receiver(self) -> FastAPI:
         """Initializes the receiver API"""
         self.app = FastAPI(
             title = self.config.get("description",""), 
@@ -121,7 +145,7 @@ class Receiver:
     
     def run(self) -> None:
         uvicorn.run(
-            self._initilize_receiver(),
+            self.initilize_receiver(),
             host = self.config.get("host","127.0.0.1"),
             port = self.config.get("port","8000"),
             reload = False
