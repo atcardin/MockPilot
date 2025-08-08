@@ -1,7 +1,7 @@
 import logging
 from receiver import Receiver
 
-CONFIG_PATH = "./config.json"
+CONFIG_PATH = "./config/receiver_config.yaml"
 
 if __name__ == "__main__":
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     receiver_logger = logging.getLogger("ReceiverAPI")
 
     # Create receiver
-    rc = Receiver(CONFIG_PATH, receiver_logger)
+    rc = Receiver(CONFIG_PATH)
 
     # Run server
     rc.run()

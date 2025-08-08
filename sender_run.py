@@ -1,7 +1,7 @@
 import logging
 from sender import Sender
 
-CONFIG_PATH = "./config.json"
+CONFIG_PATH = "./config/sender_config.yaml"
 
 if __name__ == "__main__":
 
@@ -10,10 +10,10 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
-    receiver_logger = logging.getLogger("SenderAPI")
+    logger = logging.getLogger("SenderAPI")
 
     # Create receiver
-    sdr = Sender(CONFIG_PATH, receiver_logger)
+    sdr = Sender(CONFIG_PATH, logger)
 
     # Run server
     sdr.run()

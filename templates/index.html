@@ -14,6 +14,7 @@
             --success-color: #10b981;
             --error-color: #ef4444;
             --warning-color: #f59e0b;
+            --info-color: #3b82f6;
             --text-primary: #0f172a;
             --text-secondary: #64748b;
             --bg-primary: #ffffff;
@@ -322,6 +323,18 @@
             transform: translateY(-1px);
         }
         
+        .btn-info {
+            background: var(--info-color);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .btn-info:hover {
+            background: #2563eb;
+            box-shadow: var(--shadow-md);
+            transform: translateY(-1px);
+        }
+        
         .json-editor {
             width: 100%;
             min-height: 250px;
@@ -422,78 +435,162 @@
             background: var(--text-secondary);
         }
         
-        .fields-info {
-            margin-bottom: 1.5rem;
-            padding: 1.5rem;
-            background: rgba(99, 102, 241, 0.05);
+        .body-params-section {
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
             border-radius: var(--radius-lg);
-            border: 1px solid rgba(99, 102, 241, 0.1);
-            position: relative;
             overflow: hidden;
+            background: var(--bg-primary);
+            box-shadow: var(--shadow-sm);
         }
         
-        .fields-info::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: var(--accent-color);
+        .body-params-header {
+            background: rgba(99, 102, 241, 0.05);
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid var(--border-color);
         }
         
-        .fields-info h4 {
+        .body-params-header:hover {
+            background: rgba(99, 102, 241, 0.08);
+        }
+        
+        .body-params-header h4 {
             font-size: 1rem;
             font-weight: 600;
             color: var(--text-primary);
-            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .expand-icon {
+            transition: transform 0.2s ease;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+        
+        .expand-icon.expanded {
+            transform: rotate(180deg);
+        }
+        
+        .body-params-content {
+            padding: 0;
+            max-height: 0;
+            overflow: auto;
+            transition: all 0.3s ease;
+            background: var(--bg-secondary);
+        }
+        
+        .body-params-content.expanded {
+            max-height: 600px;
+            padding: 1.5rem;
         }
         
         .field-item {
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
-            padding: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
             background: var(--bg-primary);
             border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+        
+        .field-item:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .field-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .field-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
         }
         
         .field-name {
             font-weight: 600;
-            color: var(--accent-color);
+            color: var(--text-primary);
+            font-size: 0.9rem;
         }
         
         .field-type {
             background: var(--accent-color);
             color: white;
-            padding: 0.25rem 0.5rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 1rem;
             font-size: 0.75rem;
-            margin-left: 0.5rem;
             font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
 
-        .field-value {
-            background: var(--accent-color);
+        .field-constraint {
+            background: var(--info-color);
             color: white;
-            padding: 0.25rem 0.5rem;
+            padding: 0.25rem 0.75rem;
             border-radius: 1rem;
             font-size: 0.75rem;
-            margin-left: 0.5rem;
             font-weight: 500;
         }
 
-        .required {
-            color: var(--error-color);
-            font-weight: 700;
-            margin-left: 0.25rem;
+        .required-badge {
+            background: var(--error-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
         
-        .field-item small {
+        .field-description {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            line-height: 1.4;
+            margin-top: 0.5rem;
+        }
+        
+        .field-parent {
             color: var(--text-secondary);
             font-size: 0.75rem;
-            display: block;
+            font-style: italic;
             margin-top: 0.25rem;
+        }
+        
+        .parameter-info-badge {
+            background: var(--accent-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        
+        .parameter-info-badge.loaded {
+            background: var(--success-color);
+        }
+        
+        .loading-message {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 2rem;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         
         /* Dark mode support */
@@ -543,6 +640,16 @@
             .json-editor {
                 min-height: 200px;
             }
+            
+            .field-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.5rem;
+            }
+            
+            .body-params-content.expanded {
+                max-height: 800px;
+            }
         }
         
         @media (max-width: 480px) {
@@ -557,54 +664,68 @@
             .endpoint-body {
                 padding: 1rem;
             }
+            
+            .body-params-content.expanded {
+                padding: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>{{ config.description }}</h1>
+            <h1>MockPilot</h1>
+            <h2>{{ config.info.title }}</h2>
             <!-- <p>Simulate any external system locally</p> -->
         </div>
         
         <div class="content">
             <div class="config-info">
                 <h3>Configuration</h3>
-                <p><strong>Target Host:</strong> {{ config.targetHost }} <strong>Target Port:</strong> {{ config.targetPort }}</p>
+                <p><strong>Target:</strong> {{ config.servers[1].url }}</p>
                 <button class="btn btn-secondary" onclick="reloadConfig()" style="margin-top: 1rem;">
                     Reload Config
                 </button>
             </div>
             
-            {% for endpoint in config.endpoints %}
+            {% for endpoint in endpoints %}
             <div class="endpoint">
                 <div class="endpoint-header" onclick="toggleEndpoint({{ loop.index0 }})">
                     <div>
-                        <strong>{{ endpoint.url }}</strong>
+                        <strong>{{ endpoint.path }}</strong>
                     </div>
                     <span class="method-badge" id="method-{{ loop.index0 }}">{{ endpoint.method }}</span>
                 </div>
                 
                 <div class="endpoint-body" id="endpoint-{{ loop.index0 }}">
-                    {% if endpoint.bodyFields %}
-                    <div class="fields-info">
-                        <h4>Request Fields</h4>
-                        {% for field in endpoint.bodyFields %}
-                        <div class="field-item">
-                            <span class="field-name">{{ field.name }}</span>
-                            <span class="field-type">{{ field.dataType }}</span>
-                            {% if field.minValue %}<span class="field-value">Min: {{ field.minValue }}</span>{% endif %}
-                            {% if field.maxValue %}<span class="field-value">Max: {{ field.maxValue }}</span>{% endif %}
-                            {% if field.required %}<span class="required">*</span>{% endif %}
-                            {% if field.parentProperty %}<small>Parent: {{ field.parentProperty }}</small>{% endif %}
-                            {% if field.description %}<small>{{ field.description }}</small>{% endif %}
+                    {% if endpoint.method and endpoint.method != 'get' %}
+                    <!-- Body Parameters Section -->
+                    <div class="body-params-section">
+                        <div class="body-params-header" onclick="toggleBodyParams({{ loop.index0 }})">
+                            <h4>
+                                Body Parameters
+                                <span class="parameter-info-badge" id="param-info-{{ loop.index0 }}">
+                                    Click to view schema
+                                </span>
+                            </h4>
+                            <span class="expand-icon" id="expand-icon-{{ loop.index0 }}">▼</span>
                         </div>
-                        {% endfor %}
+                        <div class="body-params-content" id="body-params-content-{{ loop.index0 }}">
+                            <div class="loading-message" id="loading-{{ loop.index0 }}">
+                                <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+                                    <div style="display: inline-block; animation: spin 1s linear infinite; margin-bottom: 1rem;">⏳</div>
+                                    <div>Loading schema information...</div>
+                                </div>
+                            </div>
+                            <div class="schema-content" id="schema-content-{{ loop.index0 }}" style="display: none;">
+                                <!-- Schema content will be populated by JavaScript -->
+                            </div>
+                        </div>
                     </div>
                     {% endif %}
                                        
                     <div class="button-group">
-                        {% if endpoint.method and endpoint.method != 'GET' %}
+                        {% if endpoint.method and endpoint.method != 'get' %}
                         <button class="btn btn-primary" onclick="generateBody({{ loop.index0 }})">
                             Generate Random Data
                         </button>
@@ -614,7 +735,7 @@
                         </button>
                     </div>
                     
-                    {% if endpoint.method and endpoint.method != 'GET' %}
+                    {% if endpoint.method and endpoint.method != 'get' %}
                     <div>
                         <label for="body-{{ loop.index0 }}" style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-primary);">Request Body (JSON)</label>
                         <textarea class="json-editor" id="body-{{ loop.index0 }}" placeholder="Enter your JSON request body here..."></textarea>
@@ -638,6 +759,87 @@
         function toggleEndpoint(index) {
             const body = document.getElementById(`endpoint-${index}`);
             body.classList.toggle('active');
+        }
+        
+        function toggleBodyParams(index) {
+            const content = document.getElementById(`body-params-content-${index}`);
+            const icon = document.getElementById(`expand-icon-${index}`);
+            const isExpanded = content.classList.contains('expanded');
+            
+            content.classList.toggle('expanded');
+            icon.classList.toggle('expanded');
+            
+            // Load schema information if expanding for the first time
+            if (!isExpanded && !content.dataset.loaded) {
+                loadSchemaInfo(index);
+            }
+            
+            // Prevent event bubbling to parent endpoint toggle
+            event.stopPropagation();
+        }
+        
+        async function loadSchemaInfo(endpointIndex) {
+            const loadingElement = document.getElementById(`loading-${endpointIndex}`);
+            const schemaContent = document.getElementById(`schema-content-${endpointIndex}`);
+            const infoBadge = document.getElementById(`param-info-${endpointIndex}`);
+            
+            try {
+                // Get endpoint details to extract schema information
+                const response = await fetch(`/endpoint_schema/${endpointIndex}`);
+                const data = await response.json();
+                
+                loadingElement.style.display = 'none';
+                schemaContent.style.display = 'block';
+                
+                if (data.fields && data.fields.length > 0) {
+                    renderSchemaFields(data.fields, schemaContent);
+                    infoBadge.textContent = `${data.fields.length} fields`;
+                    infoBadge.classList.add('loaded');
+                } else {
+                    schemaContent.innerHTML = '<div class="no-params-message">No body parameters defined for this endpoint</div>';
+                    infoBadge.textContent = 'No parameters';
+                    infoBadge.style.background = 'var(--text-secondary)';
+                }
+                
+                // Mark as loaded
+                document.getElementById(`body-params-content-${endpointIndex}`).dataset.loaded = 'true';
+                
+            } catch (error) {
+                loadingElement.style.display = 'none';
+                schemaContent.style.display = 'block';
+                schemaContent.innerHTML = '<div class="no-params-message">Error loading schema information</div>';
+                infoBadge.textContent = 'Error';
+                infoBadge.style.background = 'var(--error-color)';
+                console.error('Error loading schema:', error);
+            }
+        }
+        
+        function renderSchemaFields(fields, container) {
+            const fieldsHtml = fields.map(field => {
+                const constraintsHtml = [];
+                if (field.format !== undefined) constraintsHtml.push(`<span class="field-constraint">Format: ${field.format}</span>`);
+                if (field.minimum !== undefined) constraintsHtml.push(`<span class="field-constraint">Min: ${field.minimum}</span>`);
+                if (field.maximum !== undefined) constraintsHtml.push(`<span class="field-constraint">Max: ${field.maximum}</span>`);
+                if (field.minLength !== undefined) constraintsHtml.push(`<span class="field-constraint">MinLen: ${field.minLength}</span>`);
+                if (field.maxLength !== undefined) constraintsHtml.push(`<span class="field-constraint">MaxLen: ${field.maxLength}</span>`);
+                if (field.enum !== undefined) constraintsHtml.push(`<span class="field-constraint">Values: ${field.enum}</span>`);
+                if (field.nullable !== undefined) constraintsHtml.push(`<span class="field-constraint">Nullable</span>`);
+                
+                return `
+                    <div class="field-item">
+                        <div class="field-header">
+                            <span class="field-name">${field.name}</span>
+                            <span class="field-type">${field.type}</span>
+                            ${field.required ? '<span class="required-badge">Required</span>' : ''}
+                            ${constraintsHtml.join('')}
+                        </div>
+                        ${field.description ? `<div class="field-description">${field.description}</div>` : ''}
+                        ${field.example !== undefined ? `<div class="field-description">Example: <code>${JSON.stringify(field.example)}</code></div>` : ''}
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = fieldsHtml;
         }
         
         async function generateBody(endpointIndex) {
@@ -676,18 +878,18 @@
             const method = document.getElementById(`method-${endpointIndex}`).textContent;
             bodyText = "" 
             
-            if (method != "GET") {
+            if (method != "get") {
                 bodyText = document.getElementById(`body-${endpointIndex}`).value;
             }
 
-            if (method == "GET" && bodyText != "") {
+            if (method == "get" && bodyText != "") {
                 alert("Body not allowed for GET requests!");
                 button.innerHTML = originalText;
                 button.disabled = false;
                 return;
             }
 
-            if (method != "GET" && bodyText == "") {
+            if (method != "get" && bodyText == "") {
                 alert("Specify a body first!");
                 button.innerHTML = originalText;
                 button.disabled = false;
@@ -753,7 +955,7 @@
                 setTimeout(() => {
                     button.innerHTML = originalText;
                     button.disabled = false;
-                }, 1500);
+                }, 1000);
                 
                 // Smooth scroll to response
                 setTimeout(() => {

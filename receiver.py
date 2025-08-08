@@ -1,152 +1,109 @@
-from fastapi import FastAPI
+import yaml
+from fastapi import FastAPI, Request
+from starlette.responses import JSONResponse
+from openapi_core import OpenAPI, validate_request
+from openapi_core.validation.request.datatypes import RequestParameters
+from openapi_core.protocols import Request as OpenAPIProtocolRequest
+from openapi_core.exceptions import OpenAPIError
 from contextlib import asynccontextmanager
-from pydantic import BaseModel, Field, create_model
-from typing import Any, Dict, List, Optional, Type, Annotated
+from typing import Optional
 import uvicorn
-import logging
-import json
+
+class StarletteOpenAPIRequest(OpenAPIProtocolRequest):
+    def __init__(self, request: Request, body: Optional[bytes]):
+        self._request = request
+        self._body = body or b""
+        self.parameters = RequestParameters(
+            path=request.path_params,
+            query=request.query_params,
+            header=request.headers,
+            cookie=request.cookies,
+        )
+
+    @property
+    def host_url(self) -> str:
+        return str(self._request.base_url).rstrip("/")
+
+    @property
+    def path(self) -> str:
+        return self._request.url.path
+
+    @property
+    def full_url_pattern(self) -> str:
+        return str(self._request.url)
+
+    @property
+    def method(self) -> str:
+        return self._request.method.lower()
+
+    @property
+    def content_type(self) -> str:
+        return self._request.headers.get("content-type", "").lower()
+
+    @property
+    def body(self) -> Optional[bytes]:
+        return self._body
+
 
 class Receiver:
-    def __init__(self, config_path, logger=None):
-        self.config_path = config_path
-        self.config = self.load_config()
+    def __init__(self, spec_path: str):
+        self.spec_path = spec_path
+        self.spec_dict = self._load_spec()
+        self.openapi = OpenAPI.from_dict(self.spec_dict)
         self.app = None
-        self.logger = logger or logging.getLogger("APIReceiver")
 
-    def load_config(self):
-        try:
-            with open(self.config_path, 'r') as f:
-                return json.load(f).get("receiverConfig", {})
-        except FileNotFoundError:
-            raise Exception(f"Config file not found at {self.config_path}!")
-    
+    def _load_spec(self):
+        with open(self.spec_path, "r", encoding="utf‑8") as f:
+            return yaml.safe_load(f)
+
     @asynccontextmanager
     async def _lifespan(self, app: FastAPI):
-        self.logger.info("Receiver server starting...")
+        print("Server starting…")
         yield
-        self.logger.info("Receiver server stopping...")
+        print("Server stopping…")
 
-    def parse_type(self, dataType: str, field: dict) -> Type:
-        """Map JSON data type to Python type, adding constraints as specified."""
-        if dataType == "string":
-            return str
-        elif dataType == "float":
-            if "minValue" in field or "maxValue" in field:
-                return Annotated[float, Field(ge=field.get("minValue"), le=field.get("maxValue"))]
-            return float
-        elif dataType == "integer":
-            if "minValue" in field or "maxValue" in field:
-                return Annotated[int, Field(ge=field.get("minValue", None), le=field.get("maxValue", None))] 
-            return int
-        elif dataType == "boolean":
-            return bool
-        elif dataType == "array":
-            return list
-        elif dataType == "object":
-            return dict  # will get overridden with nested model
-        else:
-            raise Exception(f"Unrecognized propety type {dataType} in field {field}!")
+    def _make_handler(self):
+        async def handler(request: Request):
+            raw = await request.body()
+            oreq = StarletteOpenAPIRequest(request, raw)
 
-    def _build_nested_model(self, name: str, fields: list) -> Type[BaseModel]:
-        """Builds the nested model"""
-        children_map: Dict[str, list] = {}
+            try:
+                result = validate_request(oreq, spec=self.openapi.spec)
+            except OpenAPIError as e:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "message": "Validation error",
+                        "errors": [str(e.__cause__)],
+                    },
+                )
 
-        for field in fields:
-            parent = field["parentProperty"]
-            children_map.setdefault(parent, []).append(field)
+            return JSONResponse(
+                status_code=200,
+                content={"message": "Valid request"},
+            )
 
-        def _build_model(model_name: str, parent: Optional[str]) -> Type[BaseModel]:
-            model_fields = {}
+        return handler
 
-            for field in children_map.get(parent, []):
-                field_type = self.parse_type(field["dataType"], field)
-                required = field.get("required", False)
-                field_name = field["name"]
+    def _initialize_paths(self):
+        for path, methods in self.spec_dict.get("paths", {}).items():
+            for method in methods:
+                self.app.add_api_route(path, self._make_handler(), methods=[method.upper()])
+                print(f"Registered endpoint: {method.upper()} {path}")
 
-                # Nested object
-                if field["dataType"] == "object":
-                    nested_model = _build_model(field_name.capitalize(), field_name)
-                    field_type = nested_model
-                elif field["dataType"] == "array":
-                    # If it's an array of objects, check if children exist
-                    child_items = children_map.get(field_name, [])
-                    if len(child_items) == 1 and child_items[0]["dataType"] == "object":
-                        wrapper_field = child_items[0]
-                        wrapper_name = wrapper_field["name"]
-                        # Build model using children of that synthetic wrapper
-                        item_model = _build_model(field_name.capitalize() + "Item", wrapper_name)
-                        field_type = List[item_model]
-                    else:
-                        field_type = List[Any]
-
-                default = ... if required else None
-                model_fields[field_name] = (field_type, Field(default, description=field.get("description", "")))
-
-            return create_model(model_name, **model_fields)
-
-        return _build_model(name, None)
-
-    def _make_handler(self, model):
-        """Create a handler function for the model specified"""
-        async def _handler(payload: model):
-            return {
-                "message": "Valid",
-                "data": payload.dict()
-                }
-        return _handler
-
-    def _make_handler_without_body(self):
-        """Create a handler function for the model specified"""
-        async def _handler():
-            return {
-                "message": "Valid"
-                }
-        return _handler
-
-    def _initialize_endpoint(self, endpoint_config) -> None:
-        """Initializes a single endpoint"""
-        path = endpoint_config.get("url",None)
-        method = endpoint_config.get("method",None)
-        body = endpoint_config.get("bodyFields",[])
-        if path is None or method is None:
-            return
-        
-        if method == "GET":
-            # No model needed
-            model = None
-            # Dummy handler
-            handler = self._make_handler_without_body()
-        else:
-            # Create the model
-            model = self._build_nested_model("RequestModel", endpoint_config["bodyFields"])
-            # Create the handler function
-            handler = self._make_handler(model)
-        # Add the endpoint the API
-        self.app.add_api_route(path, handler, methods=[method])
-        self.logger.info(f"API route added: {method} {path}")
-        return
-
-    def _initialize_endpoints(self) -> None:
-        """Initializes all endpoints"""
-        self.logger.info("Initializing endpoints...")
-        endpoints = self.config.get("endpoints", [])
-        for endpoint_config in endpoints:
-            self._initialize_endpoint(endpoint_config)
-
-    def initilize_receiver(self) -> FastAPI:
-        """Initializes the receiver API"""
-        self.app = FastAPI(
-            title = self.config.get("description",""), 
-            version = self.config.get("version","1.0.0"),
-            lifespan = self._lifespan
-        )
-        self._initialize_endpoints()
+    def init_app(self) -> FastAPI:
+        self.app = FastAPI(lifespan=self._lifespan)
+        self._initialize_paths()
         return self.app
-    
+
     def run(self) -> None:
+        # First server in the YAML is the host 
+        url = self.spec_dict.get("servers",[])[0]["url"]
+        host = url.split("/")[2].split(":")[0]
+        port = int(url.split("/")[2].split(":")[1])
         uvicorn.run(
-            self.initilize_receiver(),
-            host = self.config.get("host","127.0.0.1"),
-            port = self.config.get("port","8000"),
+            self.init_app(),
+            host = host,
+            port = port,
             reload = False
         )
